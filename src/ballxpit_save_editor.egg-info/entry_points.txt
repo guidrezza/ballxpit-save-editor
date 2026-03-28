@@ -1,0 +1,2 @@
+[console_scripts]
+ballxpit-save-editor = ballxpit_save_editor.editor:main

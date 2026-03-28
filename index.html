@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BALL x PIT Save Editor</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <h1>BALL x PIT Save Editor</h1>
+      <div class="topbar-actions">
+        <span class="status-pill">Unofficial</span>
+        <button class="text-button danger-text" id="disclaimerButton" type="button">Disclaimer</button>
+      </div>
+    </header>
+
+    <main class="stage-shell">
+      <section class="stage-card">
+        <div class="stage-header">
+          <h2 id="stepTitle">Load your save</h2>
+        </div>
+
+        <div class="step-notice" id="stepNotice" hidden></div>
+        <div id="stepContent"></div>
+
+        <div class="step-nav">
+          <button class="ghost" id="backButton" type="button">Back</button>
+          <button id="nextButton" type="button">Next</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer-bar">
+      <button class="text-button footer-restore-button" id="restoreFlowButton" type="button">Reload backup</button>
+      <div class="footer-links">
+        <a href="https://guidrezza.com" target="_blank" rel="noreferrer">made by guidrezza</a>
+        <a href="https://github.com/guidrezza/ballxpit-save-editor" target="_blank" rel="noreferrer">Source code</a>
+      </div>
+    </footer>
+  </div>
+
+  <input id="bundleInput" type="file" multiple accept=".yankai,.balls,.vdf" hidden>
+  <input id="folderInput" type="file" multiple webkitdirectory hidden>
+  <input id="restoreInput" type="file" multiple accept=".zip,.ballxpitbackup,.yankai,.balls,.vdf" hidden>
+
+  <div class="modal-backdrop" id="disclaimerModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="disclaimerTitle">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">Disclaimer</p>
+          <h3 id="disclaimerTitle">Use at your own risk</h3>
+        </div>
+        <button class="ghost small-button" id="disclaimerCloseButton" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          This is an unofficial open-source save editor for BALL x PIT. It is experimental, it may break after game updates,
+          and it may damage, invalidate, or permanently alter save data.
+        </p>
+        <p>
+          No warranty is provided. You are responsible for keeping backups, disabling Steam Cloud before replacing files, and
+          verifying your save in-game after any change or restore.
+        </p>
+        <p>
+          This project is not affiliated with Kenny Sun, Valve, or Steam.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="./app.js"></script>
+</body>
+</html>

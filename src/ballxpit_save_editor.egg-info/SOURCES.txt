@@ -1,0 +1,11 @@
+LICENSE
+README.md
+pyproject.toml
+src/ballxpit_save_editor/__init__.py
+src/ballxpit_save_editor/__main__.py
+src/ballxpit_save_editor/editor.py
+src/ballxpit_save_editor.egg-info/PKG-INFO
+src/ballxpit_save_editor.egg-info/SOURCES.txt
+src/ballxpit_save_editor.egg-info/dependency_links.txt
+src/ballxpit_save_editor.egg-info/entry_points.txt
+src/ballxpit_save_editor.egg-info/top_level.txt
