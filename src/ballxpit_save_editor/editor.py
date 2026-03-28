@@ -51,7 +51,7 @@ LEGACY_CHAR_NAMES_BY_ID = {
 CHAR_DISPLAY_BY_ID = {
     0: "Warrior",
     1: "Repentant",
-    2: "Keyfinger",
+    2: "Itchy Finger",
     3: "Tiptoer",
     4: "Cogitator (Unused)",
     5: "Cogitator",
@@ -69,9 +69,55 @@ CHAR_DISPLAY_BY_ID = {
     17: "Juggler",
     18: "Falconer (Unused)",
     19: "Falconer",
-    20: "Carousel",
+    20: "Carouser",
     21: "False Messiah",
     22: "Default (Unused)",
+}
+
+CANONICAL_CHARACTER_ORDER = [
+    "Warrior",
+    "Itchy Finger",
+    "Repentant",
+    "Cohabitants",
+    "Cogitator",
+    "Embedded",
+    "Shade",
+    "Shieldbearer",
+    "Spendthrift",
+    "Juggler",
+    "Empty Nester",
+    "Flagellant",
+    "Makeshift Sisyphus",
+    "Physicist",
+    "Tactician",
+    "Radical",
+    "Falconer",
+    "Carouser",
+    "False Messiah",
+]
+
+CHARACTER_ORDER_ALIAS_TO_KEY = {
+    "warrior": "warrior",
+    "keyfinger": "itchyfinger",
+    "itchyfinger": "itchyfinger",
+    "repentant": "repentant",
+    "cohabitants": "cohabitants",
+    "cogitator": "cogitator",
+    "embedded": "embedded",
+    "shade": "shade",
+    "shieldbearer": "shieldbearer",
+    "spendthrift": "spendthrift",
+    "juggler": "juggler",
+    "emptynester": "emptynester",
+    "flagellant": "flagellant",
+    "makeshiftsisyphus": "makeshiftsisyphus",
+    "physicist": "physicist",
+    "tactician": "tactician",
+    "radical": "radical",
+    "falconer": "falconer",
+    "carousel": "carouser",
+    "carouser": "carouser",
+    "falsemessiah": "falsemessiah",
 }
 
 UNUSED_CHAR_TYPE_IDS = {3, 4, 18, 22}
@@ -266,6 +312,25 @@ class SaveBundle:
 
 def normalize_name(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", value.lower())
+
+
+CHARACTER_ORDER_BY_KEY = {normalize_name(name): index for index, name in enumerate(CANONICAL_CHARACTER_ORDER)}
+
+
+def character_sort_key(record: "CharacterRecord") -> tuple[int, int]:
+    candidates = (
+        normalize_name(record.display_name),
+        normalize_name(record.legacy_name),
+    )
+    for candidate in candidates:
+        mapped = CHARACTER_ORDER_ALIAS_TO_KEY.get(candidate, candidate)
+        if mapped in CHARACTER_ORDER_BY_KEY:
+            return (CHARACTER_ORDER_BY_KEY[mapped], record.index)
+    return (len(CANONICAL_CHARACTER_ORDER), record.index)
+
+
+def sort_character_records(records: list["CharacterRecord"]) -> list["CharacterRecord"]:
+    return sorted(records, key=character_sort_key)
 
 
 def titleize_camel(value: str) -> str:
@@ -800,10 +865,10 @@ def format_upgrade_list(upgrade_ids: list[int]) -> str:
 
 def find_target_character(records: list[CharacterRecord], char_index: int | None, char_type: str | None, from_upgrade: int) -> CharacterRecord:
     if char_index is not None:
-        try:
-            return records[char_index]
-        except IndexError as exc:
-            raise ValueError(f"Character index {char_index} is out of range") from exc
+        for record in records:
+            if record.index == char_index:
+                return record
+        raise ValueError(f"Character index {char_index} is out of range")
 
     if char_type is not None:
         char_type_id = resolve_char(char_type)
@@ -1185,7 +1250,7 @@ def apply_character_respecs(
 def list_characters_command(path: Path, show_all: bool) -> int:
     bundle = resolve_save_bundle(path)
     root = parse_save(bundle.primary_save)
-    records = decode_characters(root)
+    records = sort_character_records(decode_characters(root))
 
     print(f"Save: {bundle.primary_save}")
     print()
@@ -1225,7 +1290,7 @@ def replace_upgrade_command(
     bundle = resolve_save_bundle(path)
     path = bundle.primary_save
     root = parse_save(path)
-    records = decode_characters(root)
+    records = sort_character_records(decode_characters(root))
     target = find_target_character(records, char_index, char_type, from_upgrade)
     before_ids = list(target.upgrade_ids)
     if to_upgrade in before_ids:

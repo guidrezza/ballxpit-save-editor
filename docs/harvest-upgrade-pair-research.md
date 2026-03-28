@@ -41,8 +41,6 @@ The following characters do not yet have a documented harvest tree in this proje
 - Tactician
 - Falconer
 - Carouser
-- Carousel
-- Keyfinger
 - Any future or renamed character slots not listed in the table above
 
 ## Notes From Development Save Comparison

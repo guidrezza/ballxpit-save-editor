@@ -8,7 +8,7 @@ const WINDOWS_SAVE_PATH = String.raw`%USERPROFILE%\AppData\LocalLow\Kenny Sun\BA
 const CHAR_DISPLAY_BY_ID = {
   0: "Warrior",
   1: "Repentant",
-  2: "Keyfinger",
+  2: "Itchy Finger",
   3: "Tiptoer",
   4: "Cogitator (Unused)",
   5: "Cogitator",
@@ -26,7 +26,7 @@ const CHAR_DISPLAY_BY_ID = {
   17: "Juggler",
   18: "Falconer (Unused)",
   19: "Falconer",
-  20: "Carousel",
+  20: "Carouser",
   21: "False Messiah",
   22: "Default (Unused)",
 };
@@ -126,6 +126,56 @@ const KNOWN_HARVEST_TREES_BY_CHARACTER = {
   "Empty Nester": [[1, 10], [9, 8], [11, 1]],
   Radical: [[9, 4], [3, 2], [5, 1]],
 };
+
+const CANONICAL_CHARACTER_ORDER = [
+  "Warrior",
+  "Itchy Finger",
+  "Repentant",
+  "Cohabitants",
+  "Cogitator",
+  "Embedded",
+  "Shade",
+  "Shieldbearer",
+  "Spendthrift",
+  "Juggler",
+  "Empty Nester",
+  "Flagellant",
+  "Makeshift Sisyphus",
+  "Physicist",
+  "Tactician",
+  "Radical",
+  "Falconer",
+  "Carouser",
+  "False Messiah",
+];
+
+const CHARACTER_ORDER_ALIAS_TO_KEY = {
+  warrior: "warrior",
+  keyfinger: "itchyfinger",
+  itchyfinger: "itchyfinger",
+  repentant: "repentant",
+  cohabitants: "cohabitants",
+  cogitator: "cogitator",
+  embedded: "embedded",
+  shade: "shade",
+  shieldbearer: "shieldbearer",
+  spendthrift: "spendthrift",
+  juggler: "juggler",
+  emptynester: "emptynester",
+  flagellant: "flagellant",
+  makeshiftsisyphus: "makeshiftsisyphus",
+  physicist: "physicist",
+  tactician: "tactician",
+  radical: "radical",
+  falconer: "falconer",
+  carousel: "carouser",
+  carouser: "carouser",
+  falsemessiah: "falsemessiah",
+};
+
+const CHARACTER_ORDER_INDEX = Object.fromEntries(
+  CANONICAL_CHARACTER_ORDER.map((name, index) => [normalizeName(name), index]),
+);
 
 const utf8Encoder = new TextEncoder();
 const utf8Decoder = new TextDecoder("utf-8");
@@ -758,6 +808,36 @@ function formatUpgradeList(upgradeIds) {
     return "-";
   }
   return upgradeIds.map((id) => UPGRADE_DISPLAY_BY_ID[id] || `Unknown(${id})`).join(", ");
+}
+
+function getCharacterOrderKey(record) {
+  const candidates = [
+    normalizeName(record.display_name || ""),
+    normalizeName(record.legacy_name || ""),
+  ];
+
+  for (const candidate of candidates) {
+    const mapped = CHARACTER_ORDER_ALIAS_TO_KEY[candidate] || candidate;
+    if (Object.prototype.hasOwnProperty.call(CHARACTER_ORDER_INDEX, mapped)) {
+      return mapped;
+    }
+  }
+
+  return null;
+}
+
+function sortCharacterRecords(records) {
+  return [...records].sort((left, right) => {
+    const leftKey = getCharacterOrderKey(left);
+    const rightKey = getCharacterOrderKey(right);
+    const leftRank = leftKey === null ? CANONICAL_CHARACTER_ORDER.length : CHARACTER_ORDER_INDEX[leftKey];
+    const rightRank = rightKey === null ? CANONICAL_CHARACTER_ORDER.length : CHARACTER_ORDER_INDEX[rightKey];
+
+    if (leftRank !== rightRank) {
+      return leftRank - rightRank;
+    }
+    return left.index - right.index;
+  });
 }
 
 function decodeCharacters(root) {
@@ -1474,7 +1554,7 @@ function validateSaveEntries(entries) {
     primary,
     primaryName: [...entries.entries()].find(([, entry]) => entry === primary)?.[0] || PRIMARY_SAVE_NAME,
     primaryBytes: primary.bytes,
-    records: decodeCharacters(root).filter((record) => !record.unused),
+    records: sortCharacterRecords(decodeCharacters(root).filter((record) => !record.unused)),
     roundtripMessage: "Roundtrip verification passed. The primary save rewrites byte-exactly and is ready for editing.",
   };
 }
