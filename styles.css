@@ -89,7 +89,8 @@ a {
 .path-row,
 .inline-actions,
 .choice-row,
-.editor-toolbar {
+.editor-toolbar,
+.toggle-control {
   display: flex;
   align-items: center;
 }
@@ -397,6 +398,39 @@ button.ghost {
 .editor-toolbar {
   justify-content: space-between;
   gap: 20px;
+  flex-wrap: wrap;
+}
+
+.editor-toolbar .lead {
+  max-width: 720px;
+}
+
+.toggle-control {
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel-strong);
+  cursor: pointer;
+}
+
+.toggle-control input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.toggle-control strong,
+.toggle-control small {
+  display: block;
+}
+
+.toggle-control small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .editor-workspace {

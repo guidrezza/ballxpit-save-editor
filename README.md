@@ -51,12 +51,12 @@ Static website for client-side save editing, plus a Python CLI for local backup-
 BALL x PIT does not currently expose a simple in-game way to respec harvest choices. This project focuses on one job:
 
 - inspect your roster
-- respec researched harvest rows for documented characters
+- reshuffle saved harvest skills without changing the save structure
 - keep the workflow understandable
 - avoid server-side save handling
 - document the parts of the game's upgrade logic we still have not decoded
 
-It is deliberately not trying to become a giant cheat suite.
+It stays conservative by default, with an optional Unlocked mode for users who knowingly want to bypass level checks.
 
 ## At A Glance
 
@@ -81,8 +81,8 @@ It is deliberately not trying to become a giant cheat suite.
       <p>A GitHub release can ship the static site files directly, with no app wrapper and no native packaging.</p>
     </td>
     <td width="33%" valign="top">
-      <h3>Conservative Guardrails</h3>
-      <p>The browser editor enforces researched row choices at levels 3, 6, and 10 for documented characters, and leaves unknown characters read-only.</p>
+      <h3>Simple Guardrails</h3>
+      <p>Any editable character can choose any supported harvest skill, while normal mode keeps the character within saved slot and level limits.</p>
     </td>
     <td width="33%" valign="top">
       <h3>Research Driven</h3>
@@ -121,8 +121,9 @@ What it does:
 - runs entirely client-side
 - roundtrip-checks the uploaded primary save before allowing edits
 - dims out 0 XP and unused character slots
-- enforces researched row-by-row harvest choices for documented characters
-- treats unknown and special characters as view-only for now
+- lets editable characters choose any supported harvest skill for each existing saved skill slot
+- keeps normal edits inside the character's level-unlocked slot count
+- includes Unlocked mode for bypassing the level check without adding save slots
 - downloads rewritten files back to you instead of touching your save folder directly
 - exports zipped backup packages and keeps a selectable local restore list in browser storage
 
@@ -210,15 +211,15 @@ The CLI is more automated than the website:
 
 ## Current Guardrail
 
-The browser editor currently uses researched harvest rows for documented characters:
+The browser editor now uses a simpler, portfolio-friendly rule:
 
-- row 1 unlocks at level `3`
-- row 2 unlocks at level `6`
-- row 3 unlocks at level `10`
-- each unlocked row exposes only its two documented choices
-- characters without a documented tree stay read-only in the browser editor
+- any editable character can pick any supported harvest skill
+- normal mode respects level unlock counts at levels `3`, `6`, and `10`
+- the editor never creates additional harvest skill nodes; it only rewrites existing saved slots
+- Unlocked mode bypasses the level unlock check for users who knowingly want an impossible or cheat-style build
+- unused, locked, 0 XP, and special no-harvest character slots remain read-only
 
-The CLI is still the lower-level tool in the repo and does not yet mirror every browser-side row guardrail.
+The CLI is still the lower-level tool in the repo and does not yet mirror every browser-side convenience.
 
 ## Known Issues
 
