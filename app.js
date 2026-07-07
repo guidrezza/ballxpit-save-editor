@@ -114,19 +114,6 @@ const ALL_UPGRADE_IDS = Object.keys(UPGRADE_DISPLAY_BY_ID)
   .sort((a, b) => a - b);
 const HARVEST_ROW_UNLOCK_LEVELS = [3, 6, 10];
 
-// Only characters listed here are currently treated as known harvest characters.
-const KNOWN_HARVEST_TREES_BY_CHARACTER = {
-  Warrior: [[11, 6], [4, 1], [6, 8]],
-  "Itchy Finger": [[9, 4], [3, 1], [5, 6]],
-  Repentant: [[3, 12], [11, 10], [13, 1]],
-  Cohabitants: [[13, 8], [6, 5], [9, 1]],
-  Cogitator: [[13, 8], [8, 6], [9, 1]],
-  Embedded: [[3, 12], [11, 10], [13, 1]],
-  Juggler: [[1, 9], [9, 6], [10, 1]],
-  "Empty Nester": [[1, 10], [9, 8], [11, 1]],
-  Radical: [[9, 4], [3, 2], [5, 1]],
-};
-
 const CANONICAL_CHARACTER_ORDER = [
   "Warrior",
   "Itchy Finger",
@@ -200,6 +187,7 @@ const state = {
   restoreCandidate: null,
   roundtripVerified: false,
   roundtripMessage: "",
+  unlockedMode: false,
 };
 
 const elements = {
@@ -864,17 +852,7 @@ function decodeCharacters(root) {
 }
 
 function characterIsEditable(record) {
-  const knownTree = KNOWN_HARVEST_TREES_BY_CHARACTER[record.display_name];
-  const unlockedRows = getUnlockedHarvestRowCount(record.level);
-  return (
-    Boolean(knownTree) &&
-    record.unlocked &&
-    !record.unused &&
-    !record.no_harvest &&
-    record.xp > 0 &&
-    unlockedRows > 0 &&
-    record.upgrade_ids.length === unlockedRows
-  );
+  return buildCharacterProfile(record).editable;
 }
 
 function characterDisabledReason(record) {
@@ -890,14 +868,14 @@ function characterDisabledReason(record) {
   if (record.unused) {
     return "Unused slot";
   }
-  if (!KNOWN_HARVEST_TREES_BY_CHARACTER[record.display_name]) {
-    return "Unknown tree";
+  if (!record.upgrade_ids.length) {
+    return "No harvest skills";
   }
-  if (getUnlockedHarvestRowCount(record.level) === 0) {
-    return "No unlocked rows yet";
+  if (!state.unlockedMode && getUnlockedHarvestRowCount(record.level) === 0) {
+    return "No level slots yet";
   }
-  if (record.upgrade_ids.length !== getUnlockedHarvestRowCount(record.level)) {
-    return "Level/save mismatch";
+  if (!state.unlockedMode && record.upgrade_ids.length > getUnlockedHarvestRowCount(record.level)) {
+    return "Needs Unlocked mode";
   }
   return null;
 }
@@ -1327,7 +1305,11 @@ async function savePersistedBackupBundle(bundle) {
 }
 
 function getEditableSlotCount(record) {
-  return Math.min(MAX_HARVEST_SLOTS, getUnlockedHarvestRowCount(record.level));
+  const savedSlots = Math.min(MAX_HARVEST_SLOTS, record.upgrade_ids.length);
+  if (state.unlockedMode) {
+    return savedSlots;
+  }
+  return Math.min(savedSlots, getUnlockedHarvestRowCount(record.level));
 }
 
 function getUnlockedHarvestRowCount(level) {
@@ -1343,68 +1325,17 @@ function getUnlockedHarvestRowCount(level) {
   return 0;
 }
 
-function matchCurrentSkillsToKnownRows(rows, currentSkills, unlockedRows) {
-  const targetSkills = [...currentSkills].slice(0, unlockedRows);
-  let bestMatch = {
-    score: -1,
-    picks: Array(unlockedRows).fill(null),
-  };
-
-  function walk(rowIndex, usedIndices, picks, score) {
-    if (rowIndex >= unlockedRows) {
-      if (score > bestMatch.score) {
-        bestMatch = { score, picks: [...picks] };
-      }
-      return;
-    }
-
-    const rowOptions = rows[rowIndex];
-    picks[rowIndex] = null;
-    walk(rowIndex + 1, usedIndices, picks, score);
-
-    for (let skillIndex = 0; skillIndex < targetSkills.length; skillIndex += 1) {
-      if (usedIndices.has(skillIndex)) {
-        continue;
-      }
-
-      const skillId = targetSkills[skillIndex];
-      if (!rowOptions.includes(skillId)) {
-        continue;
-      }
-
-      usedIndices.add(skillIndex);
-      picks[rowIndex] = skillId;
-      walk(rowIndex + 1, usedIndices, picks, score + 1);
-      usedIndices.delete(skillIndex);
-    }
-  }
-
-  walk(0, new Set(), Array(unlockedRows).fill(null), 0);
-  return bestMatch.picks;
-}
-
 function buildCharacterProfile(record) {
-  const knownRows = KNOWN_HARVEST_TREES_BY_CHARACTER[record.display_name];
-  const unlockedRows = getUnlockedHarvestRowCount(record.level);
-
-  if (!knownRows) {
-    return {
-      known: false,
-      editable: false,
-      exportable: false,
-      unlockedRows,
-      rows: [],
-      note: "This character's harvest tree is still unknown, so editing is disabled for now.",
-    };
-  }
-
-  const matchedSelections = matchCurrentSkillsToKnownRows(knownRows, record.upgrade_ids, unlockedRows);
+  const savedSlots = Math.min(MAX_HARVEST_SLOTS, record.upgrade_ids.length);
+  const levelSlots = getUnlockedHarvestRowCount(record.level);
+  const editableSlots = getEditableSlotCount(record);
+  const blockedByLevel = !state.unlockedMode && savedSlots > levelSlots;
   const rows = Array.from({ length: MAX_HARVEST_SLOTS }, (_, index) => ({
     index,
     unlockLevel: HARVEST_ROW_UNLOCK_LEVELS[index],
-    options: [...knownRows[index]],
-    unlocked: index < unlockedRows,
-    current: index < unlockedRows ? (matchedSelections[index] ?? null) : null,
+    options: [...ALL_UPGRADE_IDS],
+    unlocked: index < editableSlots,
+    current: index < savedSlots ? (record.upgrade_ids[index] ?? null) : null,
   }));
 
   const editable = (
@@ -1412,26 +1343,29 @@ function buildCharacterProfile(record) {
     !record.unused &&
     !record.no_harvest &&
     record.xp > 0 &&
-    unlockedRows > 0 &&
-    record.upgrade_ids.length === unlockedRows
+    savedSlots > 0 &&
+    !blockedByLevel
   );
 
-  let note = "Choose one option for each unlocked row. The researched harvest rows unlock at levels 3, 6, and 10.";
+  let note = state.unlockedMode
+    ? "Unlocked mode is on: choose any supported harvest skill for each saved slot. This can create impossible in-game builds."
+    : "Choose any supported harvest skill for each saved slot your character level already allows.";
   if (!editable) {
-    if (unlockedRows === 0) {
-      note = "This known character has no harvest row unlocked yet. The first row unlocks at level 3.";
-    } else if (record.upgrade_ids.length !== unlockedRows) {
-      note = `This save stores ${record.upgrade_ids.length} harvest slot(s), but level ${record.level} expects ${unlockedRows}.`;
+    if (savedSlots === 0) {
+      note = "This character has no saved harvest skill slots to rewrite.";
+    } else if (!state.unlockedMode && levelSlots === 0) {
+      note = "This character level does not unlock harvest skill editing yet. Turn on Unlocked mode to bypass this.";
+    } else if (blockedByLevel) {
+      note = `This save stores ${savedSlots} harvest skill slot(s), but level ${record.level} allows ${levelSlots}. Turn on Unlocked mode to bypass the level check.`;
     }
-  } else if (matchedSelections.some((value, index) => index < unlockedRows && value === null)) {
-    note = "Some current saved skills do not match the known tree. Pick a valid option for each unlocked row before exporting.";
   }
 
   return {
-    known: true,
     editable,
     exportable: editable,
-    unlockedRows,
+    unlockedRows: editableSlots,
+    savedSlots,
+    levelSlots,
     rows,
     note,
   };
@@ -1444,7 +1378,7 @@ function getBaselineSelection(record) {
 
 function validateDraftForRecord(record, draft) {
   const profile = buildCharacterProfile(record);
-  if (!profile.known || !profile.exportable || draft.length !== MAX_HARVEST_SLOTS) {
+  if (!profile.exportable || draft.length !== MAX_HARVEST_SLOTS) {
     return false;
   }
 
@@ -1719,7 +1653,7 @@ function getSelectedLocalBackup() {
 function setSlotSelection(record, slotIndex, upgradeId) {
   const profile = buildCharacterProfile(record);
   const row = profile.rows[slotIndex];
-  if (!profile.known || !profile.exportable || !row || !row.unlocked || !row.options.includes(upgradeId)) {
+  if (!profile.exportable || !row || !row.unlocked || !row.options.includes(upgradeId)) {
     showToast("That skill is not allowed for this slot.", true);
     return;
   }
@@ -1865,7 +1799,7 @@ function renderRosterList(selected) {
           <p class="roster-title">${escapeHtml(record.display_name)}</p>
           ${badge}
         </div>
-        <p class="roster-meta">Level ${record.level} · ${profile.known ? `${profile.unlockedRows} / ${MAX_HARVEST_SLOTS} rows unlocked` : "Tree unknown"}</p>
+        <p class="roster-meta">Level ${record.level} · ${profile.savedSlots} saved skill slot${profile.savedSlots === 1 ? "" : "s"}</p>
         <div class="chip-row">${chips || '<span class="skill-chip">No harvest skills</span>'}</div>
       </button>
     `;
@@ -1876,9 +1810,11 @@ function renderGuidedChoices(record, profile, draft) {
   return profile.rows.map((row, slotIndex) => {
     const subtitle = row.unlocked
       ? (draft[slotIndex] === null
-        ? "Pick one choice for this unlocked row."
-        : "Choose one of the two known options for this row.")
-      : `Unlocks at level ${row.unlockLevel}.`;
+        ? "Pick any supported harvest skill for this slot."
+        : "Choose any supported harvest skill for this slot.")
+      : slotIndex < profile.savedSlots
+        ? `Locked by character level. Slot ${slotIndex + 1} normally unlocks at level ${row.unlockLevel}.`
+        : "No saved slot exists here.";
 
     const choices = row.options.map((upgradeId) => {
       const selected = draft[slotIndex] === upgradeId;
@@ -1909,7 +1845,7 @@ function renderGuidedChoices(record, profile, draft) {
             <p class="slot-title">Row ${slotIndex + 1}</p>
             <p class="slot-subtitle">${subtitle}</p>
           </div>
-          <span class="meta-pill ${row.unlocked ? "" : "locked"}">Level ${row.unlockLevel}</span>
+          <span class="meta-pill ${row.unlocked ? "" : "locked"}">${row.unlocked ? "Saved slot" : `Level ${row.unlockLevel}`}</span>
         </div>
         <div class="choice-list">${choices}</div>
       </div>
@@ -1930,10 +1866,10 @@ function renderEditorDetail(selected) {
   const profile = buildCharacterProfile(selected);
   const currentSkills = selected.upgrade_ids
     .slice(0, selected.upgrade_ids.length)
-    .map((upgradeId) => `<span class="skill-chip">${escapeHtml(UPGRADE_DISPLAY_BY_ID[upgradeId])}</span>`)
+    .map((upgradeId) => `<span class="skill-chip">${escapeHtml(UPGRADE_DISPLAY_BY_ID[upgradeId] || String(upgradeId))}</span>`)
     .join("");
 
-  if (selected.no_harvest || !profile.known || !profile.editable) {
+  if (selected.no_harvest || !profile.editable) {
     return `
       <div class="editor-summary">
         <div class="summary-card">
@@ -1946,9 +1882,7 @@ function renderEditorDetail(selected) {
           <div class="chip-row">${currentSkills || '<span class="skill-chip">No harvest skills</span>'}</div>
           <p>${selected.no_harvest
             ? "False Messiah is shown for reference only and cannot be edited."
-            : profile.known
-              ? profile.note
-              : "This character's harvest tree is still unknown, so editing is disabled for now."}</p>
+            : profile.note}</p>
         </div>
       </div>
     `;
@@ -1974,7 +1908,7 @@ function renderEditorDetail(selected) {
         <div class="chip-row">
           ${chosenSkills.length
             ? chosenSkills.map((upgradeId) => `<span class="skill-chip">${escapeHtml(UPGRADE_DISPLAY_BY_ID[upgradeId])}</span>`).join("")
-            : '<span class="skill-chip">No valid row choices selected</span>'}
+            : '<span class="skill-chip">No valid skill choices selected</span>'}
         </div>
       </div>
       <div class="skill-list">
@@ -2005,12 +1939,23 @@ function renderEditorStep() {
     <div class="editor-stage">
       <div class="editor-toolbar">
         <div>
-          <p class="lead">Known characters use researched rows at levels 3, 6, and 10. Unknown and special characters stay read-only for now.</p>
+          <p class="lead">Pick any supported harvest skill for each existing saved slot. Normal mode respects level unlocks; Unlocked mode bypasses that level check.</p>
         </div>
+        <label class="toggle-control">
+          <input data-action="toggle-unlocked-mode" type="checkbox" ${state.unlockedMode ? "checked" : ""}>
+          <span>
+            <strong>Unlocked mode</strong>
+            <small>Bypass level restriction</small>
+          </span>
+        </label>
         <button data-action="download-edited" type="button" ${canDownload ? "" : "disabled"}>Download edited bundle</button>
       </div>
 
       <div class="summary-grid">
+        <div class="notice-card">
+          <strong>Experimental and unofficial.</strong>
+          <p>This tool can produce broken or unsupported saves. Keep backups, disable Steam Cloud before replacing files, and use it at your own risk.</p>
+        </div>
         <div class="summary-card">
           <span class="summary-label">Editor status</span>
           <strong>${changed.length} character${changed.length === 1 ? "" : "s"} changed</strong>
@@ -2025,7 +1970,7 @@ function renderEditorStep() {
       <div class="editor-workspace">
         <aside class="roster-panel">
           <h3>Characters</h3>
-          <p class="helper-text">0 XP, unused, and special slots stay visible but cannot be edited.</p>
+          <p class="helper-text">0 XP, unused, locked, and special slots stay visible but cannot be edited.</p>
           <div class="roster-list">${renderRosterList(selected)}</div>
         </aside>
 
@@ -2511,6 +2456,15 @@ elements.stepContent.addEventListener("click", (event) => {
     if (record) {
       setSlotSelection(record, Number(actionTarget.dataset.slotIndex), Number(actionTarget.dataset.upgradeId));
     }
+    return;
+  }
+
+  if (action === "toggle-unlocked-mode") {
+    state.unlockedMode = Boolean(actionTarget.checked);
+    syncDrafts();
+    clearStepNotice();
+    render();
+    showToast(state.unlockedMode ? "Unlocked mode enabled." : "Unlocked mode disabled.");
     return;
   }
 

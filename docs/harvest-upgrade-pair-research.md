@@ -3,12 +3,12 @@
 Working reference for the researched harvest-upgrade rows shown on character pages.
 
 > [!IMPORTANT]
-> This document is the current source of truth for the browser editor's row guardrails.
-> Characters not listed in the documented table below are treated as unknown and stay read-only for now.
+> This document is retained as historical research.
+> The browser editor no longer enforces these per-character row pairs; editable characters can now choose any supported harvest skill.
 
 ## Current Working Model
 
-- Documented harvest characters have up to `3` harvest rows.
+- Documented harvest characters appear to have up to `3` harvest rows.
 - Row unlock levels are currently modeled as `3`, `6`, and `10`.
 - Each unlocked row offers exactly `2` choices.
 - House upgrades are intentionally ignored here.
@@ -18,19 +18,19 @@ Working reference for the researched harvest-upgrade rows shown on character pag
 
 | Character | Level 3 row | Level 6 row | Level 10 row | Status |
 | --- | --- | --- | --- | --- |
-| Warrior | `Wood Master` or `Stonepiercer` | `Long Sickle` or `Wheat Harvester` | `Stonepiercer` or `Time Keeper` | Implemented in the browser editor |
+| Warrior | `Wood Master` or `Stonepiercer` | `Long Sickle` or `Wheat Harvester` | `Stonepiercer` or `Time Keeper` | Historical research |
 | The Itchy Finger | `Sprinter` or `Long Sickle` | `Demolitionist` or `Wheat Harvester` | `Woodpecker` or `Stonepiercer` | Documented from user-provided tree |
-| The Repentant | `Demolitionist` or `Stone Master` | `Wood Master` or `Wheat Master` | `Builder` or `Wheat Harvester` | Implemented in the browser editor |
-| The Cohabitants | `Builder` or `Time Keeper` | `Stonepiercer` or `Woodpecker` | `Sprinter` or `Wheat Harvester` | Implemented in the browser editor |
-| The Cogitator | `Builder` or `Time Keeper` | `Time Keeper` or `Stonepiercer` | `Sprinter` or `Wheat Harvester` | Implemented in the browser editor |
-| The Embedded | `Demolitionist` or `Stone Master` | `Wood Master` or `Wheat Master` | `Builder` or `Wheat Harvester` | Implemented in the browser editor |
-| The Juggler | `Wheat Harvester` or `Sprinter` | `Sprinter` or `Stonepiercer` | `Wheat Master` or `Wheat Harvester` | Implemented in the browser editor |
-| The Empty Nester | `Wheat Harvester` or `Wheat Master` | `Sprinter` or `Time Keeper` | `Wood Master` or `Wheat Harvester` | Implemented in the browser editor |
-| The Radical | `Sprinter` or `Long Sickle` | `Demolitionist` or `Forester` | `Woodpecker` or `Wheat Harvester` | Implemented in the browser editor |
+| The Repentant | `Demolitionist` or `Stone Master` | `Wood Master` or `Wheat Master` | `Builder` or `Wheat Harvester` | Historical research |
+| The Cohabitants | `Builder` or `Time Keeper` | `Stonepiercer` or `Woodpecker` | `Sprinter` or `Wheat Harvester` | Historical research |
+| The Cogitator | `Builder` or `Time Keeper` | `Time Keeper` or `Stonepiercer` | `Sprinter` or `Wheat Harvester` | Historical research |
+| The Embedded | `Demolitionist` or `Stone Master` | `Wood Master` or `Wheat Master` | `Builder` or `Wheat Harvester` | Historical research |
+| The Juggler | `Wheat Harvester` or `Sprinter` | `Sprinter` or `Stonepiercer` | `Wheat Master` or `Wheat Harvester` | Historical research |
+| The Empty Nester | `Wheat Harvester` or `Wheat Master` | `Sprinter` or `Time Keeper` | `Wood Master` or `Wheat Harvester` | Historical research |
+| The Radical | `Sprinter` or `Long Sickle` | `Demolitionist` or `Forester` | `Woodpecker` or `Wheat Harvester` | Historical research |
 
 ## Currently Unknown
 
-The following characters do not yet have a documented harvest tree in this project and are therefore read-only in the browser editor:
+The following characters do not yet have a documented harvest tree in this project. They are no longer read-only solely because their tree is unknown:
 
 - Shade
 - Shieldbearer
@@ -46,7 +46,7 @@ The following characters do not yet have a documented harvest tree in this proje
 ## Notes From Development Save Comparison
 
 - Several characters in the development save currently store combinations that do **not** fit the researched rows above.
-- That is one reason the editor now shows row-by-row choices for documented characters instead of trusting existing stored skills as a safe ruleset.
+- That is one reason the editor now avoids enforcing these row pairs as hard rules.
 - Repeated skill names across different rows appear to be real in the research data, so the editor no longer assumes every unlocked row must resolve to a distinct skill name.
 
 ## Engine Evidence Found In Local Game Files
