@@ -6,6 +6,8 @@
 
 Static website for client-side save editing, plus a Python CLI for local backup-first workflows.
 
+Hosted at: [nickdrezza.github.io/ballxpit-save-editor](https://nickdrezza.github.io/ballxpit-save-editor/)
+
 <p>
   <a href="#quick-start"><strong>Quick Start</strong></a>
   ·
@@ -57,6 +59,13 @@ BALL x PIT does not currently expose a simple in-game way to respec harvest choi
 - document the parts of the game's upgrade logic we still have not decoded
 
 It stays conservative by default, with an optional Unlocked mode for users who knowingly want to bypass level checks.
+
+## Portfolio Notes
+
+- **Problem:** save editing is risky, game-specific, and easy to make opaque.
+- **Approach:** keep the main editor static and client-side, then pair it with a Python CLI for backup-first local workflows.
+- **What it shows:** reverse engineering, conservative UX guardrails, binary roundtrip checks, and clear public risk documentation.
+- **Ship surface:** one repo can serve the website from GitHub Pages while still supporting local CLI usage.
 
 ## At A Glance
 
